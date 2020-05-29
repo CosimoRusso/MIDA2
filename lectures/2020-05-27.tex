@@ -1,0 +1,316 @@
+\newlecture{Sergio Savaresi}{27/05/2020}
+
+\begin{remark}
+    For stability let's recall a result of feedback system:
+    \begin{figure}[H]
+        \centering
+        \begin{tikzpicture}[node distance=2cm,auto,>=latex']
+            \node[int] at (0,1.5) (f1) {$F_1(t)$};
+            \node[int] at (0,0.5) (f2) {$F_2(t)$};
+            \node[sum] at (-1.5,1.5) (sum) {};
+
+            \draw[<-] (sum) -- ++(-1,0) node[pos=0.2] {+};
+            \draw[->] (f2) -| (sum) node[pos=0.9] {-};
+            \draw[->] (sum) -- (f1);
+            \draw[->] (f1) -- ++(2,0);
+            \draw[->] (1.5,1.5) |- (f2);
+        \end{tikzpicture}
+    \end{figure}
+
+    To check the closed-loop stability:
+    \begin{itemize}
+        \item compute the \emph{loop-function} $L(z) = F_1(z) F_2(z)$
+        \item Build the \emph{characteristic polynomial} $\chi(z) = L_N(z) + L_D(z)$ (sum of numerator and denominator)
+        \item Find the roots of $\chi(z)$, closed loop system is asymptotically stable iff all the roots of $\chi(z)$ are strictly inside the unit circle
+    \end{itemize}
+\end{remark}
+
+\[
+    L(z) = \frac{1}{b_0+b_1z^{-1}} \cdot \frac{z^{-1}(b_0+b_1z^{-1})}{1-az^{-1}} \cdot a
+\]
+\[
+    \chi(z) = az^{-1}(b_0+b_1z^{-1}) + (1-az^{-1})(b_0+b_1z^{-1}) = b_0+b_1z^{-1} = B(z)
+\]
+
+The closed loop system is asymptotically stable thanks to the minimum phase assumption.
+
+Performance analysis
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=2cm,auto,>=latex']
+        \node[int, minimum width=2cm, align=center] at (0,0) (sys) {closed\\loop\\system};
+        \draw[<-,transform canvas={yshift=0.3cm}] (sys) -- ++(-1.5,0) node[left] {$y^0(t)$};
+        \draw[<-,transform canvas={yshift=-0.3cm}] (sys) -- ++(-1.5,0) node[left] {$e(t)$};
+        \draw[->] (sys) -- ++(1.5,0) node[right] {$y(t)$};
+    \end{tikzpicture}
+\end{figure}
+
+Since the system is L.T.I. we can use the superposition principle:
+\[
+    y(t) = \underbrace{F_{y^0y}(z)y^0(t)}_\text{TF from $y^0$ to $y$} + \underbrace{F_{ey}(z)e(t)}_\text{TF from $e$ to $y$}
+\]
+
+Let's compute these transfer functions:
+\begin{align*}
+    F_{y^0y} &= \frac{ \frac{1}{b_0+b_1z^{-1}} \frac{z^{-1}(b_0+b_1z^{-1})}{1-az^{-1}} }{ 1 + \frac{1}{b_0+b_1z^{-1}} \frac{z^{-1}(b_0+b_1z^{-1})}{1-az^{-1}}a } = z^{-1} \\
+    F_{ey} &= \frac{ \frac{1}{1-az^{-1}} }{ 1 + \frac{1}{b_0+b_1z^{-1}} \frac{z^{-1}(b_0+b_1z^{-1})}{1-az^{-1}}a } = 1
+\end{align*}
+
+Notice that that the closed loop system has a very simple closed-loop behavior:
+\[
+    y(t) = z^{-1}y^0(t) + e(t) = y^0(t-1) + e(t)
+\]
+
+$y(t)$ follows exactly $y^0(t)$ (but with a 1-step delay), disturbed by noise $e(t)$.
+This is the best possible solution.
+
+\section{General solution}
+
+\[
+    S: y(t) = \frac{B(z)}{A(z)}u(t-k) + \frac{C(z)}{A(z)}e(t) \qquad e(t) \sim WN(0, \lambda^2)
+\]
+
+With the assumptions:
+\begin{itemize}
+    \item $b_0 \ne 0$
+    \item $B(z)$ has all the roots strictly inside the unit circle (minimum phase)
+    \item $\frac{C(z)}{A(z)}$ is canonical representation
+    \item $y^0(t) \perp e(t)$
+    \item $y^0(t)$ is unpredictable
+\end{itemize}
+
+\paragraph{Goal} Minimize $J = E\left[ \left( y(t) - y^0(t) \right)^2 \right]$
+
+The trick is to rewrite $y(t) = \hat{y}(t|t-k) + \epsilon(t)$.
+
+\begin{align*}
+    J &= E\left[ \left( \hat{y}(t|t-k) + \epsilon(t) - y^0(t) \right)^2 \right] = E\left[ \left( (\hat{y}(t|t-k) - y^0(t)) + \epsilon(t) \right)^2 \right] \\
+    & = E\left[ \left(\hat{y}(t|t-k) - y^0(t)\right)^2 \right] + E\left[ \epsilon(t)^2 \right] + \cancel{2E\left[ \epsilon(t)\left( \hat{y}(t|t-k) - y^0(t) \right) \right]} \\
+    &= E\left[ (\hat{y}(t|t-k) - y^0(t))^2 \right] + \text{constant w.r.t. $u(t)$}
+\end{align*}
+
+General formula for ARMAX predictor:
+\[
+    \frac{C(z)}{A(z)} = \underbrace{E(z)}_\text{solution} + \underbrace{\frac{\tilde{R}(z)z^{-n}}{A(z)}}_\text{residual} \qquad \text{(after $n$ steps of long division)}
+\]
+
+\[
+    \hat{y}(t|t-k) = \frac{B(z)E(z)}{C(z)}u(t-k) + \frac{\tilde{R}(z)}{C(z)}y(t-k)
+\]
+Shift ahead $k$-steps:
+\[
+    \hat{y}(t+k|t) = \frac{B(z)E(z)}{C(z)}u(t) + \frac{\tilde{R}(z)}{C(z)}y(t)
+\]
+
+Impose $\hat{y}(t+k|t) = y^0(t+k)$, at time $t$ we don't know $y^0(t+k)$, we replace it with $y^0(t)$.
+\[
+    \hat{y}(t+k|t) = y^0(t)
+\]
+
+\[
+    \frac{B(z)E(z)}{C(z)}u(t) + \frac{\tilde{R}(z)}{C(z)}y(t) = y^0(t)
+\]
+\[
+    u(t) = \frac{1}{B(z)E(z)}\left(C(z)y^0(t)-\tilde{R}(z)y(t)\right)
+\]
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=2cm,auto,>=latex']
+        \node[int] at (0,1.5) (c) {$C(z)$};
+        \node[sum] at (1.5,1.5) (s1) {};
+        \node[int] at (3,1.5) (b1) {$\frac{1}{B(z)E(z)}$};
+        \node[int] at (6,1.5) (b2) {$z^{-1}\frac{B(z)}{A(z)}$};
+        \node[sum] at (7.5,1.5) (s2) {};
+        \node[int] at (3,0) (b3) {$\tilde{R}(z)$};
+        \node[int] at (7.5,3) (b4) {$\frac{C(z)}{A(z)}$};
+
+        \draw[<-] (c) -- ++(-1.5,0) node[left] {$y^0(t)$};
+        \draw[->] (c) -- (s1) node[pos=0.8] {+};
+        \draw[->] (s1) -- (b1);
+        \draw[->] (b1) -- (b2) node[pos=0.7] {$\scriptstyle u(t)$};
+        \draw[->] (b2) -- (s2);
+        \draw[->] (b3) -| (s1) node[pos=0.9] {-};
+        \draw[->] (b4) -- (s2);
+        \draw[->] (s2) -- ++(2,0) node[right] {$y(t)$};
+        \draw[<-] (b4) -- ++(0,1) node[above] {$e(t)$};
+        \draw[->] (8.5,1.5) |- (b3);
+
+        \draw[dashed, green] (-1,-0.7) rectangle (4,2.5) node[above left] {\footnotesize controller};
+        \draw[dashed, blue] (4.5,-0.7) rectangle (9,4.7) node[above left] {\footnotesize system};
+    \end{tikzpicture}
+\end{figure}
+
+\subsection{Stability check}
+
+\[
+    L(z) = \frac{1}{B(z)E(z)}\cdot \frac{z^{-k}B(z)}{A(z)}\cdot\tilde{R}(z)
+\]
+\begin{align*}
+    \chi(z) = z^{-k}B(z)\tilde{R}(z) + B(z)E(z)A(z) = B(z) \left( z^{-k}\tilde{R}(z)+E(z)A(z) \right) = B(z)C(z)
+\end{align*}
+
+The system is asymptotically stable iff:
+\begin{itemize}
+    \item All roots of $B(z)$ are stable (minimum phase assumption)
+    \item All roots of $C(z)$ are stable (canonical representation)
+\end{itemize}
+
+\subsection{Performance analysis}
+
+\[
+    y(t) = F_{y^0y}(z)y^0(t) + F_{ey}(z)e(t)
+\]
+\begin{align*}
+    F_{y^0y} &= \frac{ C(z) \frac{1}{B(z)E(z)}\frac{z^{-k}B(z)}{A(z)} }{1 + \frac{1}{B(z)E(z)}\frac{z^{-k}B(z)}{A(z)}\tilde{R}(z) } = z^{-k} \\
+    F_{y^0y} &= \frac{ \frac{C(z)}{A(z)}}{1 + \frac{1}{B(z)E(z)}\frac{z^{-k}B(z)}{A(z)}\tilde{R}(z) } = E(z)\\
+\end{align*}
+
+At closed loop the behavior is very simple:
+\[
+    y(t) = y^0(t-k)+E(z)e(t)
+\]
+
+$y(t)$ exactly tracks/follows $y^0(t)$ but with $k$ steps of delay and it's disturbed by noise $E(z)e(t)$.
+This is the best possible solution.
+
+\begin{remark}
+    The closed-loop behavior is very simple.
+
+    \begin{figure}[H]
+        \centering
+        \begin{tikzpicture}[node distance=2cm,auto,>=latex']
+            \node[int] at (0,1.5) (c) {};
+            \node[sum] at (1,1.5) (s1) {};
+            \node[int] at (2,1.5) (b1) {};
+            \node[int] at (3.5,1.5) (b2) {};
+            \node[sum] at (4.5,1.5) (s2) {};
+            \node[int] at (2,0) (b3) {};
+            \node[int] at (4.5,3) (b4) {};
+
+            \draw[<-] (c) -- ++(-1,0) node[left] {$y^0(t)$};
+            \draw[->] (c) -- (s1) node[pos=0.8] {+};
+            \draw[->] (s1) -- (b1);
+            \draw[->] (b1) -- (b2) node[pos=0.7] {};
+            \draw[->] (b2) -- (s2);
+            \draw[->] (b3) -| (s1) node[pos=0.9] {-};
+            \draw[->] (b4) -- (s2);
+            \draw[->] (s2) -- ++(1,0) node[right] {$y(t)$};
+            \draw[<-] (b4) -- ++(0,1) node[above] {$e(t)$};
+            \draw[->] (5,1.5) |- (b3);
+
+            \node[int] at (9,1.5) (z) {$z^{-k}$};
+            \node[int] at (10,3) (e) {$E(z)$};
+            \node[sum] at (10,1.5) (s3) {};
+
+            \draw[<-] (z) -- ++(-1,0) node[left] {$y^0(t)$};
+            \draw[->] (s3) -- ++(1,0) node[right] {$y(t)$};
+            \draw[->] (z) -- (s3);
+            \draw[->] (e) -- (s3);
+            \draw[<-] (e) -- ++(0,1) node[above] {$e(t)$};
+
+            \draw[dashed] (-0.7,-0.7) rectangle (5.2,4.7);
+            \draw[dashed] (8.2,0.7) rectangle (10.7,4.7);
+
+            \node at (6.7,3) {$\equiv$};
+        \end{tikzpicture}
+    \end{figure}
+
+    Where are all the poles of the original system?
+
+    The M.V. controller \emph{pushes} all the system poles into the non-observable and/or non-controllable parts of the system (it makes internal cancellations).
+    It's not a problem since we verified it's internally asymptotically stable.
+\end{remark}
+
+\section{Main limits of Minimum Variance Controllers}
+
+\begin{itemize}
+    \item Can be applied only to minimum phase systems
+    \item We cannot moderate the control/actuation effort
+    \item We cannot design a specific behavior from $y^0(t)$ to $y(t)$
+\end{itemize}
+
+To overcome these limits there is an extension called G.M.V.C. (Generalized Minimum Variance Control).
+Main difference: extension of the performance index.
+
+\begin{align*}
+    \text{MVC: } J &= E\left[ \left(y(t) - y^0(t)\right)^2 \right] \\
+    \text{GMVC: } J &= E\left[ \left(P(z)y(t) - y^0(t) + Q(z)u(t)\right)^2 \right]
+\end{align*}
+\begin{itemize}
+    \item $P(z)$ is the \emph{reference model}
+    \item $Q(z)$ is a T.F. that makes a penalty to big values of $u(t)$
+\end{itemize}
+
+\begin{remark}[Reference model $P(t)$]
+    \begin{figure}[H]
+        \centering
+        \begin{tikzpicture}[node distance=2cm,auto,>=latex']
+            \node[int] at (0,1.5) (c) {C};
+            \node[int] at (2,1.5) (s) {S};
+
+            \draw[->] (c) -- (s) node[pos=0.5] {$u(t)$};
+            \draw[->] (c) -- (s);
+            \draw[<-] (c) -- ++(-1,0) node[left] {$y^0(t)$};
+            \draw[->] (s) -- ++(2,0) node[right] {$y(t)$};
+            \draw[->] (3,1.5) -- (3,0.5) -| (c);
+        \end{tikzpicture}
+    \end{figure}
+
+    The typical goal is to obtain the best possible tracking $y(t) = y^0(t)$, however perfect tracking may not be the best solution, but the best solution is to track a \emph{reference model}: $y(t) = P(z)y^0(t)$.
+\end{remark}
+
+\begin{example}[Cruise control in a car]
+    \begin{figure}[H]
+        \centering
+        \begin{tikzpicture}[node distance=2cm,auto,>=latex']
+            \node[int] at (0,1.5) (c) {C};
+            \node[int] at (2,1.5) (s) {Car};
+
+            \draw[->] (c) -- (s) node[pos=0.5] {};
+            \draw[->] (c) -- (s);
+            \draw[<-] (c) -- ++(-1,0) node[left, align=center] {desired\\speed\\$v^0(t)$};
+            \draw[->] (s) -- ++(2,0) node[right] {speed};
+            \draw[->] (3,1.5) -- (3,0.5) -| (c);
+        \end{tikzpicture}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \begin{tikzpicture}[
+                node distance=2cm,auto,>=latex',
+                declare function={
+                    f(\x) =  (\x < 0.5) * 1 +
+                            (\x >= 0.5) * (\x < 2) * 2 +
+                            (\x >= 2) * (\x < 4) * 3 +
+                            (\x >= 4) * 1.5;
+                    f2(\x) = f(\x) - (
+                                (f(\x) - f(\x-0*0.1)) * 0.8 +
+                                (f(\x) - f(\x-1*0.1)) * 0.4 +
+                                (f(\x) - f(\x-2*0.1)) * 0.2 +
+                                (f(\x) - f(\x-3*0.1)) * 0.1
+                            ) / 1.5;
+                    f3(\x) = f(\x) - (
+                                (f(\x) - f(\x-0*0.1)) * 0.5 +
+                                (f(\x) - f(\x-1*0.1)) * 0.4 +
+                                (f(\x) - f(\x-2*0.1)) * 0.4 +
+                                (f(\x) - f(\x-3*0.1)) * 0.3 +
+                                (f(\x) - f(\x-4*0.1)) * 0.3 +
+                                (f(\x) - f(\x-5*0.1)) * 0.2 +
+                                (f(\x) - f(\x-6*0.1)) * 0.2 +
+                                (f(\x) - f(\x-7*0.1)) * 0.2 +
+                                (f(\x) - f(\x-8*0.1)) * 0.1 +
+                                (f(\x) - f(\x-9*0.1)) * 0.1 +
+                                (f(\x) - f(\x-10*0.1))* 0.05
+                            ) / 2.75;
+                }
+            ]
+            \draw[->] (0,0) -- (0,3) node[above] {$v(t)$};
+            \draw[->] (0,0) -- (5,0) node[below] {$t$};
+            \draw[domain=0:5,variable=\x,blue,samples=100] plot ({\x},{f(\x)}) node[right,black] {$v^0(t)$};
+            \draw[domain=0:5,variable=\x,red,smooth,samples=50] plot ({\x},{f2(\x)});
+            \draw[domain=0:5,variable=\x,green,smooth,samples=50] plot ({\x},{f3(\x)});
+            \node[red, right]   at (3,1) {$\scriptstyle P(z) = 1$};
+            \node[green, right] at (3,0.7) {$\scriptstyle P(z)$ \footnotesize to smooth the behavior};
+        \end{tikzpicture}
+    \end{figure}
+\end{example}
